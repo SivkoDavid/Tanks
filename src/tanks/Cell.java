@@ -65,4 +65,8 @@ public class Cell {
         }
         return false;
     }
+    
+    public void explode(){
+        _field.explodeObjectInsideCell(this);
+    }
 }

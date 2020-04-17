@@ -14,21 +14,22 @@ import Coordination.Direction;
 public class Bullet {
     private Cell _cell;
     
+    private Tank myTank;
+    private Tank enemyTank;
+    
     public Bullet(Cell cell) {
         _cell = cell;
     }
     
     public void moveToObstacle(Direction direct){
-        while(_cell.hereEmpty()){
+        while(_cell.hereEmpty() && _cell.nextCell(direct) == null){
             _cell = _cell.nextCell(direct);
         }
-        
         exeption();
-        
     }
     
     public void exeption(){
-        
+        _cell.explode();
     }
     
 }

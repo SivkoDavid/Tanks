@@ -29,7 +29,7 @@ public class GameModel {
     private List<Coordinate> _wallsPositions;
     
     private void createGameField(){
-        _field = new GameField(20,20);
+        _field = new GameField(20,20, this);
         _tanks = _field.getTanks();
         
         _wallsPositions.add(new Coordinate(3,4));
@@ -50,5 +50,9 @@ public class GameModel {
     
     private void nextCurrentTank(){
         
+    }
+    
+    void hitTank(Tank tank){
+        _field.tankToStartPosition(tank);
     }
 }
