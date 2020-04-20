@@ -80,7 +80,7 @@ public class Tank {
        
     }
     
-    private void destroy(){
+    public void destroy(){
         
     }
 }

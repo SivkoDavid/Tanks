@@ -20,39 +20,41 @@ public class GameModel {
     public static void main(String[] args) {
         // TODO code application logic here
     }
-    
+
     //------------Field-------------
-    
     private GameField _field;
     private Tank[] _tanks;
     private Tank _currentTank;
     private List<Coordinate> _wallsPositions;
-    
-    private void createGameField(){
-        _field = new GameField(20,20, this);
+
+    private void createGameField() {
+        _field = new GameField(20, 20, this);
         _tanks = _field.getTanks();
-        
-        _wallsPositions.add(new Coordinate(3,4));
-        _wallsPositions.add(new Coordinate(3,5));
-        _wallsPositions.add(new Coordinate(3,6));
-        _wallsPositions.add(new Coordinate(4,6));
-        _wallsPositions.add(new Coordinate(5,6));
-        _wallsPositions.add(new Coordinate(5,7));
-        
+
+        _wallsPositions.add(new Coordinate(3, 4));
+        _wallsPositions.add(new Coordinate(3, 5));
+        _wallsPositions.add(new Coordinate(3, 6));
+        _wallsPositions.add(new Coordinate(4, 6));
+        _wallsPositions.add(new Coordinate(5, 6));
+        _wallsPositions.add(new Coordinate(5, 7));
+
         _field.generateWalls(_wallsPositions);
     }
-    
+
     //-----------Game---------------
-    private void startGame(){
-        
-        
+    private void startGame() {
+
     }
-    
-    private void nextCurrentTank(){
-        
+
+    private void nextCurrentTank() {
+
     }
-    
-    void hitTank(Tank tank){
-        _field.tankToStartPosition(tank);
+
+    void hitTank(Tank tank) {
+        if (tank.getHP() > 0) {
+            _field.tankToStartPosition(tank);
+        }
+        else
+            tank.destroy();
     }
 }
