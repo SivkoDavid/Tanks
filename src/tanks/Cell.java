@@ -17,20 +17,36 @@ public class Cell {
     
     private final Cell[] _NearbyCell = new Cell[Direction.NUMDIRECT];
     private GameField _field;
-    private boolean hereTank;
-    private boolean hereWall;
+    
+    private Tank _tank;
+    private Wall _wall;
     
     
     Cell(GameField field)
     {
         _field = field;
-        hereTank = false;
-        hereWall = false;
     }
     
-    public void SetCell(Cell cell, Direction direct)
-    {
+    public void SetCell(Cell cell, Direction direct){
         _NearbyCell[direct.direct()] = cell;
+    }
+    
+    public boolean setObjectInside(Tank tank){
+        if(hereEmpty()){
+            _tank = tank;
+            return true;
+        }
+        else
+            return false;
+    }
+    
+    public boolean setObjectInside(Wall wall){
+        if(hereEmpty()){
+            _wall = wall;
+            return true;
+        }
+        else
+            return false;
     }
     
     Cell nextCell(Direction dir)
@@ -39,34 +55,29 @@ public class Cell {
     }
     
     public boolean hereTank(){
-        return hereTank;
+        return _tank != null;
     }
     
     public boolean hereWall(){
-        return hereWall;
+        return _wall != null;
     }
     
     public boolean hereEmpty(){
-        return !hereWall && !hereTank;
+        return !hereWall() && !hereTank();
     }
     
-    public boolean setTank(){
-        if(hereEmpty()){
-            hereTank = true;
-            return true;
-        }
-        return false;
+    public Tank getTank(){
+        return _tank;
     }
     
-    public boolean setWall(){
-        if(hereEmpty()){
-            hereWall = true;
-            return true;
-        }
-        return false;
+    public void clean(){
+        _tank = null;
+        _wall = null;
     }
     
     public void explode(){
-        _field.explodeObjectInsideCell(this);
+        if(hereTank()){
+            _tank.destroy();
+        }
     }
 }

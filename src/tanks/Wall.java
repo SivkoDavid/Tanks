@@ -14,6 +14,7 @@ public class Wall {
     
     public Wall(Cell cell) {
         _cell = cell;
+        _cell.setObjectInside(this);
     }
     
     public void setCell(Cell cell){

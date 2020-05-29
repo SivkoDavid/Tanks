@@ -5,8 +5,13 @@
  */
 package tanks;
 
+import Events.ExplosionsListener;
+import Events.ExplosionEvent;
 import Coordination.Direction;
 import Coordination.Rotation;
+import Events.TankEvent;
+import java.util.ArrayList;
+import Events.TankListener;
 
 /**
  *
@@ -14,27 +19,30 @@ import Coordination.Rotation;
  */
 public class Tank {
 
-    private final int COUNT_STAP_FOR_SHOOT = 2;
+    private final int COUNT_STAP_FOR_SHOOT = 0;
 
     private Cell _cell;
     private Direction _direct;
     private int _stepCount;
     private int _healPoint;
     private GameField _field;
-    private GameModel _model;
 
-    public Tank(GameField field, Cell cell, GameModel model) {
+    public Tank(GameField field, Cell cell) {
         _field = field;
         _cell = cell;
         _direct = Direction.Up();
         _healPoint = 3;
         _stepCount = 0;
+        _cell.setObjectInside(this);
+        System.out.println(this+" orig");
     }
 
     
 
     public void setCell(Cell cell) {
+        _cell.clean();
         _cell = cell;
+        _cell.setObjectInside(this);
     }
 
     public Cell getCell() {
@@ -49,6 +57,9 @@ public class Tank {
         _direct = direct;
     }
 
+    public Direction getDirection(){
+        return _direct;
+    }
     //--------------actions------------
     public boolean shoot() {
         if (_stepCount >= COUNT_STAP_FOR_SHOOT) {
@@ -60,11 +71,15 @@ public class Tank {
         return false;
     }
 
-    public boolean move(Direction direct) {
-        Cell newCell = _cell.nextCell(direct);
+    public boolean move() {
+        Cell newCell = _cell.nextCell(_direct);
+        
         if (newCell != null && newCell.hereEmpty()) {
+            _cell.clean();
             _cell = newCell;
-            _cell.setTank();
+            _cell.setObjectInside(this);
+            _stepCount++;
+            InformAboutMove(this);
             return true;
         }
         return false;
@@ -72,15 +87,70 @@ public class Tank {
 
     public void rotate(Rotation rotate) {
         _direct.Rotate(rotate);
+        InformAboutRotate(this);
+    }
+    
+    public void skipStep(){
+        InformAboutSkip(this);
     }
     
     public void takeLife(){
         _healPoint --;
-        _model.hitTank(this);
-       
     }
     
     public void destroy(){
         
+    }
+    
+    public void explode(){
+        takeLife();
+        InformAboutExplosion(this);
+        
+    }
+    
+    // событие взрыва танка
+    
+    static private ArrayList<TankListener> _listeners = new ArrayList<TankListener>();
+    
+    public static void AddListener(TankListener list)
+    {
+        _listeners.add(list);
+    }
+    
+    public static void RemoveListener(TankListener list)
+    {
+        _listeners.remove(list);
+    }
+    
+    private void InformAboutExplosion(Tank tank)
+    {
+        TankEvent event = new TankEvent(this,tank);
+        for(TankListener i : _listeners){
+            i.ExplosiveTank(event);
+        }
+    }
+    
+    private void InformAboutRotate(Tank tank)
+    {
+        TankEvent event = new TankEvent(this,tank);
+        for(TankListener i : _listeners){
+            i.RotateTank(event);
+        }
+    }
+    
+    private void InformAboutMove(Tank tank)
+    {
+        TankEvent event = new TankEvent(this,tank);
+        for(TankListener i : _listeners){
+            i.MoveTank(event);
+        }
+    }
+    
+    private void InformAboutSkip(Tank tank)
+    {
+        TankEvent event = new TankEvent(this,tank);
+        for(TankListener i : _listeners){
+            i.SkipStep(event);
+        }
     }
 }

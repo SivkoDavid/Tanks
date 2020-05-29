@@ -8,6 +8,7 @@ package tanks;
 import Coordination.Coordinate;
 import Coordination.Direction;
 import Coordination.Rotation;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,38 +57,38 @@ public class GameField {
         }
     }
 
-    public Cell GetCell(Coordinate coord) {
-        if (coord.getX() >= width || coord.getY() >= height) {
+    public Cell getCell(Coordinate coord) {
+        if (coord.getX() > width || coord.getY() > height) {
             return null;
         }
-
-        return field[coord.getY()][coord.getX()];
+        return field[coord.getY()-1][coord.getX()-1];
     }
 
-    public void explodeObjectInsideCell(Cell cell) {
-        for (int i = 0; i < _tanks.length; i++) {
-            if (_tanks[i].getCell() == cell) {
-
-            }
-        }
+    public Cell[][] getCells(){
+        return field;
     }
+    
+    
 
     //---------------Tanks------------
-    private Tank[] _tanks;
-    private Cell[] _startPositios;
+    private Tank[] _tanks = new Tank[2];
+    private Cell[] _startPositios = new Cell[2];
 
-    private void generateTanks() {
+    public void generateTanks() {
         //Standart start positions
-        _startPositios[0] = GetCell(new Coordinate(1, 1));
-        _startPositios[1] = GetCell(new Coordinate(width, height));
+        
+        _startPositios[0] = getCell(new Coordinate(1, 1));
+        _startPositios[1] = getCell(new Coordinate(width, height));
 
-        _tanks[0] = new Tank(this, _startPositios[0], _model);
-        _tanks[1] = new Tank(this, _startPositios[1], _model);
+        _tanks[0] = new Tank(this, _startPositios[0]);
+        _tanks[1] = new Tank(this, _startPositios[1]);
     }
 
     public void setStartPositions(Coordinate coordStart1, Coordinate coordStart2) {
-        _startPositios[0] = GetCell(coordStart1);
-        _startPositios[1] = GetCell(coordStart2);
+        _startPositios[0] = getCell(coordStart1);
+        _startPositios[1] = getCell(coordStart2);
+        tankToStartPosition(_tanks[0]);
+        tankToStartPosition(_tanks[1]);
     }
 
     public Tank[] getTanks() {
@@ -103,12 +104,12 @@ public class GameField {
     }
     //---------------Walls------------
 
-    private Wall[] _walls;
+    private ArrayList<Wall> _walls = new ArrayList<Wall>();
 
     public void generateWalls(List<Coordinate> coords) {
 
         for (int i = 0; i < coords.size(); i++) {
-            _walls[i] = new Wall(GetCell(coords.get(i)));
+            _walls.add(new Wall(getCell(coords.get(i))));
         }
     }
 }

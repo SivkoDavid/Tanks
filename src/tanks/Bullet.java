@@ -5,7 +5,10 @@
  */
 package tanks;
 
+import Events.ExplosionsListener;
+import Events.ExplosionEvent;
 import Coordination.Direction;
+import java.util.ArrayList;
 
 /**
  *
@@ -14,22 +17,49 @@ import Coordination.Direction;
 public class Bullet {
     private Cell _cell;
     
-    private Tank myTank;
-    private Tank enemyTank;
-    
     public Bullet(Cell cell) {
         _cell = cell;
     }
     
     public void moveToObstacle(Direction direct){
-        while(_cell.hereEmpty() && _cell.nextCell(direct) == null){
+        if(_cell.nextCell(direct) != null){
             _cell = _cell.nextCell(direct);
+            while(_cell.hereEmpty() && _cell.nextCell(direct) != null){
+                _cell = _cell.nextCell(direct);
+            }            
+            exeption();
         }
-        exeption();
+        
     }
     
+    //Взрыв снаряда
     public void exeption(){
-        _cell.explode();
+        InformAboutExplosion(_cell);
+        if(_cell.hereTank()){
+            _cell.getTank().explode();
+        }
+    }
+    
+    // -- обработка слушателей
+    
+    static private ArrayList<ExplosionsListener> _listeners = new ArrayList<ExplosionsListener>();
+    
+    public static void AddListener(ExplosionsListener list)
+    {
+        _listeners.add(list);
+    }
+    
+    public static void RemoveListener(ExplosionsListener list)
+    {
+        _listeners.remove(list);
+    }
+    
+    private void InformAboutExplosion(Cell cell)
+    {
+        ExplosionEvent event = new ExplosionEvent(this,cell);
+        for(ExplosionsListener i : _listeners){
+            i.ExplosiveBullet(event);
+        }
     }
     
 }
