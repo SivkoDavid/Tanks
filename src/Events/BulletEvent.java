@@ -7,19 +7,19 @@ package Events;
 
 
 import java.util.EventObject;
+import tanks.Bullet;
 import tanks.Cell;
 
 /**
  *
  * @author David
  */
-public class ExplosionEvent extends EventObject{
-    public Cell _cell;
+public class BulletEvent extends EventObject{
+    public Bullet _bullet;
     
-    public ExplosionEvent(Object source, Cell cell)
+    public BulletEvent(Object source, Bullet bullet)
     {
         super(source);
-        _cell = cell;
-        System.out.println("explos_cell");
+        _bullet = bullet;
     }
 }

@@ -8,45 +8,31 @@ package tanks;
 import Coordination.Coordinate;
 import Coordination.Direction;
 import Coordination.Rotation;
+import Events.ModelEvent;
 import Events.TankEvent;
 import java.util.ArrayList;
 import java.util.List;
 import Events.TankListener;
+import Events.ModelListener;
 
 /**
  *
  * @author David
  */
 public class GameModel {
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        // TODO code application logic here
-        GameModel model = new GameModel();
-        model.createGameField();
-        model.printField();
-        model.startGame();
-        
-        
-    }
-    
-    
-
     //------------Field-------------
     private GameField _field;
     private Tank[] _tanks;
     private Tank _currentTank;
     private ArrayList<Coordinate> _wallsPositions = new ArrayList<Coordinate>();
 
-    void createGameField() {
-        _field = new GameField(10, 10, this);
+    //Создание игрового поля
+    private void createGameField() {
+        _field = new GameField(9, 9, this);
         _field.generateTanks();
         _tanks = _field.getTanks();
-        listeningTanks();
-        _field.setStartPositions(new Coordinate(1, 1), new Coordinate(7, 1));
         
+        listeningTanks();        
         _currentTank = _tanks[0];
         
         _wallsPositions.add(new Coordinate(8, 1));
@@ -59,55 +45,78 @@ public class GameModel {
 
         _field.generateWalls(_wallsPositions);
     }
-
-    //-----------Game---------------
-    private void startGame() {
-        
-        _currentTank.move();        
-        _currentTank.rotate(Rotation.Right());
-        _currentTank.skipStep();
-        _currentTank.move();         
-        _currentTank.rotate(Rotation.Left());        
-        _currentTank.move();        
-        _currentTank.move();
-        _currentTank.move();
-        _currentTank.shoot();
-        _currentTank.skipStep();
-        _currentTank.shoot(); 
-        _currentTank.skipStep();
-        _currentTank.shoot();             
-            
-        
+    
+    public GameField field(){
+        return _field;
     }
 
-    private void nextCurrentTank() {
+    //-----------Game---------------
+    
+    //Начало игры
+    public void startGame() {
+        InformAboutStartGame("");
+        createGameField(); 
+        
+    }
+    
+    public Tank getCurrentTank(){
+        return _currentTank;
+    }
+    
+    public Tank[] getTanks(){
+        return _tanks;
+    }
+
+    //Сделать текущим следующий танк
+    void nextCurrentTank() {
         for(int i = 0; i < _tanks.length; i++){
             if(_currentTank == _tanks[i]){
                 if(i < _tanks.length-1)
                     _currentTank = _tanks[i+1];
                 else 
                     _currentTank = _tanks[0];
+                InformChangeCurrentTank("");
                 return;
             }
-        }
+        }        
         return;
     }
 
-    void hitTank(Tank tank) {
+    //Отнять жизнь игрока
+    private void hitTank(Tank tank) {
         if (tank.getHP() > 0) {
             _field.tankToStartPosition(tank);
             nextCurrentTank();
+            printField();
         }
         else{
-            theEnd();
+            theEnd(tank);
         }        
     }
     
-    void theEnd(){
-        System.out.println("wins tank - "+_currentTank);
+    //Испустить событие изменения ситуации игры
+    private void printField(){
+        InformAboutRebuildField();
+    }
+    
+    //Конец игры
+    private void theEnd(Tank luseTank){
+        String mess = "Выиграл синий танк";
+        if(luseTank == _tanks[1])
+            mess = "Выиграл красный танк";
+        InformAboutEndGame(mess);
+        finishGame();
+    }
+    
+    //Прекращение игры
+    public void finishGame(){
+        _field.destroy();
+        _tanks = null;
+        _currentTank = null;
     }
     
     //----------------Observering--------------------
+    //---------События танка------------
     TankListener list = new TankEventsForModel();
     
     private void listeningTanks(){
@@ -119,7 +128,7 @@ public class GameModel {
         public void ExplosiveTank(TankEvent e){
             hitTank(e._tank);
             System.out.println("hit tank "+e._tank);
-            printField();
+            
         }
 
         @Override
@@ -140,32 +149,56 @@ public class GameModel {
             System.out.println("skip tank "+e._tank);
             nextCurrentTank();
         }
-    }
-    
-    //------------------------------------------------
-    
-    
-    void printField(){
-        String str_field = "";
-        for(int i = 0; i < _field.getCells().length; i++){
-            for(int j = 0; j < _field.getCells()[i].length; j++){
-                if(_field.getCells()[i][j].hereTank()){
-                    if(_field.getCells()[i][j].getTank().getDirection().equals(Direction.Up()))
-                        str_field += "[A]"; 
-                    else if(_field.getCells()[i][j].getTank().getDirection().equals(Direction.Left()))
-                        str_field += "[<]";
-                    else if(_field.getCells()[i][j].getTank().getDirection().equals(Direction.Right()))
-                        str_field += "[>]";
-                    else if(_field.getCells()[i][j].getTank().getDirection().equals(Direction.Down()))
-                        str_field += "[V]";
-                }
-                else if(_field.getCells()[i][j].hereWall())
-                    str_field += "[#]";
-                else 
-                    str_field += "[ ]";             
-            }
-            str_field += "\n";
+
+        @Override
+        public void FireTank(TankEvent e) {
+            nextCurrentTank();
         }
-        System.out.println(str_field);
     }
+    
+    //-------Event model------
+    static private ArrayList<ModelListener> _listenersRebuild = new ArrayList<ModelListener>();
+    
+    public static void AddListener(ModelListener list)
+    {
+        _listenersRebuild.add(list);
+    }
+    
+    public static void RemoveListener(ModelListener list)
+    {
+        _listenersRebuild.remove(list);
+    }
+    
+    private void InformAboutRebuildField()
+    {
+        ModelEvent event = new ModelEvent(this, "");
+        for(ModelListener i : _listenersRebuild){
+            i.RebuildFieldEvent(event);
+        }
+    }
+    
+    private void InformChangeCurrentTank(String mess)
+    {
+        ModelEvent event = new ModelEvent(this, mess);
+        for(ModelListener i : _listenersRebuild){
+            i.ChangeCurrentTank(event);
+        }
+    }
+    
+    private void InformAboutStartGame(String mess)
+    {
+        ModelEvent event = new ModelEvent(this, mess);
+        for(ModelListener i : _listenersRebuild){
+            i.StartGame(event);
+        }
+    }
+    
+    private void InformAboutEndGame(String mess)
+    {
+        ModelEvent event = new ModelEvent(this, mess);
+        for(ModelListener i : _listenersRebuild){
+            i.EndGame(event);
+        }
+    }
+    
 }

@@ -11,15 +11,12 @@ import java.util.EventListener;
  *
  * @author David
  */
-public interface TankListener extends EventListener {
+public interface ModelListener extends EventListener{
+    void RebuildFieldEvent(ModelEvent e);
     
-    void ExplosiveTank(TankEvent e);
+    void ChangeCurrentTank(ModelEvent e);
     
-    void RotateTank(TankEvent e);
+    void StartGame(ModelEvent e);
     
-    void MoveTank(TankEvent e);
-    
-    void SkipStep(TankEvent e);
-    
-    void FireTank(TankEvent e);
+    void EndGame(ModelEvent e);
 }

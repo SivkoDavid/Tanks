@@ -27,6 +27,14 @@ public class GameField {
         _model = model;
         generateCells();
     }
+    
+    public int width(){
+        return width;
+    }
+    
+    public int height(){
+        return height;
+    }
 
     //------------Cells--------------
     private Cell[][] field;
@@ -68,7 +76,16 @@ public class GameField {
         return field;
     }
     
-    
+    public Coordinate getCoordinateCell(Cell cell){
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width; j++){
+                if(field[i][j] == cell){
+                    return new Coordinate(j+1, i+1);
+                }
+            }
+        }
+        return null;
+    }
 
     //---------------Tanks------------
     private Tank[] _tanks = new Tank[2];
@@ -76,17 +93,18 @@ public class GameField {
 
     public void generateTanks() {
         //Standart start positions
-        
         _startPositios[0] = getCell(new Coordinate(1, 1));
         _startPositios[1] = getCell(new Coordinate(width, height));
 
         _tanks[0] = new Tank(this, _startPositios[0]);
         _tanks[1] = new Tank(this, _startPositios[1]);
+        _tanks[0].setDirect(Direction.Right());
+        _tanks[1].setDirect(Direction.Left());
     }
 
-    public void setStartPositions(Coordinate coordStart1, Coordinate coordStart2) {
-        _startPositios[0] = getCell(coordStart1);
-        _startPositios[1] = getCell(coordStart2);
+    public void setStartPositions(Coordinate coordStartTank1, Coordinate coordStartTank2) {
+        _startPositios[0] = getCell(coordStartTank1);
+        _startPositios[1] = getCell(coordStartTank2);
         tankToStartPosition(_tanks[0]);
         tankToStartPosition(_tanks[1]);
     }
@@ -111,5 +129,15 @@ public class GameField {
         for (int i = 0; i < coords.size(); i++) {
             _walls.add(new Wall(getCell(coords.get(i))));
         }
+    }
+    
+    //Уничтожить поле
+    public void destroy(){
+        field = null;
+        for(Tank tank:_tanks){
+            tank.destroy();
+            tank.destroy();
+        }
+        _walls = null;
     }
 }

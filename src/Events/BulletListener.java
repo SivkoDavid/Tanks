@@ -5,13 +5,17 @@
  */
 package Events;
 
-import Events.ExplosionEvent;
+import Events.BulletEvent;
 import java.util.EventListener;
 
 /**
  *
  * @author David
  */
-public interface ExplosionsListener extends EventListener{
-    void ExplosiveBullet(ExplosionEvent e);
+public interface BulletListener extends EventListener{
+    void ExplosiveBullet(BulletEvent e);
+    
+    void MoveBullet(BulletEvent e);
+    
+    void StartShootBullet(BulletEvent e);
 }

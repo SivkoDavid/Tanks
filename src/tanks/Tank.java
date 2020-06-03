@@ -5,13 +5,13 @@
  */
 package tanks;
 
-import Events.ExplosionsListener;
-import Events.ExplosionEvent;
+import Events.BulletEvent;
 import Coordination.Direction;
 import Coordination.Rotation;
 import Events.TankEvent;
 import java.util.ArrayList;
 import Events.TankListener;
+import Events.BulletListener;
 
 /**
  *
@@ -19,7 +19,7 @@ import Events.TankListener;
  */
 public class Tank {
 
-    private final int COUNT_STAP_FOR_SHOOT = 0;
+    private final int COUNT_STAP_FOR_SHOOT = 3;
 
     private Cell _cell;
     private Direction _direct;
@@ -36,9 +36,7 @@ public class Tank {
         _cell.setObjectInside(this);
         System.out.println(this+" orig");
     }
-
     
-
     public void setCell(Cell cell) {
         _cell.clean();
         _cell = cell;
@@ -60,20 +58,29 @@ public class Tank {
     public Direction getDirection(){
         return _direct;
     }
+    
     //--------------actions------------
     public boolean shoot() {
         if (_stepCount >= COUNT_STAP_FOR_SHOOT) {
             Bullet bullet = new Bullet(_cell);
             bullet.moveToObstacle(_direct);
             _stepCount = 0;
+            InformAboutFire(this);
             return true;
         }
+        
         return false;
     }
+   
+    //Готовность стрелять
+    public boolean isReadyShoot(){
+        return _stepCount >= COUNT_STAP_FOR_SHOOT;
+    }
 
+    //Перемещение
     public boolean move() {
         Cell newCell = _cell.nextCell(_direct);
-        
+        //Если можно переместиться
         if (newCell != null && newCell.hereEmpty()) {
             _cell.clean();
             _cell = newCell;
@@ -92,24 +99,19 @@ public class Tank {
     
     public void skipStep(){
         InformAboutSkip(this);
+        _stepCount++;
     }
     
     public void takeLife(){
         _healPoint --;
     }
-    
-    public void destroy(){
         
-    }
-    
     public void explode(){
         takeLife();
         InformAboutExplosion(this);
-        
     }
     
-    // событие взрыва танка
-    
+    //События танка    
     static private ArrayList<TankListener> _listeners = new ArrayList<TankListener>();
     
     public static void AddListener(TankListener list)
@@ -120,6 +122,11 @@ public class Tank {
     public static void RemoveListener(TankListener list)
     {
         _listeners.remove(list);
+    }
+    
+    public static void RemoveAllListener()
+    {
+        _listeners.clear();
     }
     
     private void InformAboutExplosion(Tank tank)
@@ -152,5 +159,18 @@ public class Tank {
         for(TankListener i : _listeners){
             i.SkipStep(event);
         }
+    }
+    
+    private void InformAboutFire(Tank tank)
+    {
+        TankEvent event = new TankEvent(this,tank);
+        for(TankListener i : _listeners){
+            i.SkipStep(event);
+        }
+    }
+    
+    
+    public void destroy(){
+        RemoveAllListener();
     }
 }
