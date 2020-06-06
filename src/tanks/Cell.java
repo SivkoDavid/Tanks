@@ -20,6 +20,8 @@ public class Cell {
     
     private Tank _tank;
     private Wall _wall;
+    private GameUnit _unit;
+    private AbstractAmmo _ammo;
     
     
     Cell(GameField field)
@@ -27,57 +29,52 @@ public class Cell {
         _field = field;
     }
     
+    public GameField field(){
+        return _field;
+    }
+    
     public void SetCell(Cell cell, Direction direct){
         _NearbyCell[direct.direct()] = cell;
     }
     
-    public boolean setObjectInside(Tank tank){
-        if(hereEmpty()){
-            _tank = tank;
-            return true;
+    public void setUnit(GameUnit unit){
+        if(unit instanceof AbstractAmmo){
+            _ammo = (AbstractAmmo)unit;
         }
         else
-            return false;
+            if(hereEmpty()){
+                _unit = unit;
+            }
     }
     
-    public boolean setObjectInside(Wall wall){
-        if(hereEmpty()){
-            _wall = wall;
-            return true;
-        }
-        else
-            return false;
+    public GameUnit getUnit(){
+        return _unit;
     }
     
-    Cell nextCell(Direction dir)
+    public AbstractAmmo getAmmo(){
+        return _ammo;
+    }
+    
+    public Cell nextCell(Direction dir)
     {
         return _NearbyCell[dir.direct()];
     }
     
-    public boolean hereTank(){
-        return _tank != null;
-    }
-    
-    public boolean hereWall(){
-        return _wall != null;
-    }
     
     public boolean hereEmpty(){
-        return !hereWall() && !hereTank();
+        return _unit == null;
     }
     
-    public Tank getTank(){
-        return _tank;
-    }
-    
-    public void clean(){
-        _tank = null;
-        _wall = null;
+    public void remove(GameUnit unit){
+        if(unit instanceof AbstractAmmo)
+            _ammo = null;
+        else
+            _unit = null;
     }
     
     public void explode(){
-        if(hereTank()){
-            _tank.destroy();
+        if(_unit != null && _unit instanceof Tank){
+            ((Tank)_unit).explode();
         }
     }
 }

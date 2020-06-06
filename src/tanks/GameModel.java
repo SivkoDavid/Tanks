@@ -152,6 +152,7 @@ public class GameModel {
 
         @Override
         public void FireTank(TankEvent e) {
+            System.out.println("fire tank "+e._tank);
             nextCurrentTank();
         }
     }

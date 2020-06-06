@@ -6,6 +6,7 @@
 package gui;
 
 import Coordination.Coordinate;
+import Coordination.Direction;
 import Coordination.Rotation;
 import Events.BulletListener;
 import Events.BulletEvent;
@@ -40,9 +41,15 @@ import java.util.logging.Logger;
 import tanks.Bullet;
 import tanks.Tank;
 import Events.ModelListener;
+import java.awt.Graphics;
 import java.awt.Point;
+import java.util.ArrayList;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
+import javax.swing.Timer;
+import tanks.AbstractAmmo;
+import tanks.TurnableBullet;
+import tanks.Wall;
 /**
  *
  * @author str1k
@@ -102,7 +109,7 @@ public class GamePanel extends JFrame implements KeyListener{
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         // Создание панели информации
-        windowPanel.add(createUpMenu());
+        windowPanel.add(createInformPanel());
         
         // Создание игрового поля
         windowPanel.add(createField());
@@ -156,7 +163,7 @@ public class GamePanel extends JFrame implements KeyListener{
         //Удаление с поля старых элементов
         windowPanel.removeAll();        
         // Создание панели информации
-        windowPanel.add(createUpMenu());        
+        windowPanel.add(createInformPanel());        
         // Создание игрового поля
         windowPanel.add(createField());
         pack();
@@ -184,7 +191,7 @@ public class GamePanel extends JFrame implements KeyListener{
         }  
     }
     
-    private JPanel createUpMenu()
+    private JPanel createInformPanel()
     {
         JPanel UpperMenu = new JPanel();
         
@@ -289,28 +296,43 @@ public class GamePanel extends JFrame implements KeyListener{
     //Переписовка игрового поля
     private void repaintField() {
         for (int row = 0; row < _model.field().height(); row++){
-            for (int col = 0; col < _model.field().width(); col++) 
-            {       
-                Cell curCell = _model.field().getCell(new Coordinate(col+1, row+1));   
-                _field[row][col].setIcon(new ImageIcon(GetCellImage(_model.field().getCells()[row][col])));
-                _field[row][col].setFocusable(false);
-                _field[row][col].setBorderPainted(false);
+            for (int col = 0; col < _model.field().width(); col++){       
+                Cell curCell = _model.field().getCell(new Coordinate(col+1, row+1));
+                if(timer == null || (timer != null && timer._cell != curCell)){
+                    _field[row][col].setIcon(new ImageIcon(GetCellImage(_model.field().getCells()[row][col])));
+                    _field[row][col].removeActionListener(_field[row][col].getActionListeners().length>0 ? _field[row][col].getActionListeners()[0] : null);
+                    _field[row][col].setFocusable(false);
+                    _field[row][col].setBorderPainted(false);
+                }
             }
         }
+        validate();
+
     }
     
     //Генерация изображения для определенной ячейки
     private BufferedImage GetCellImage(Cell curCell){
         BufferedImage cellImg = new BufferedImage(CELL_SIZE, CELL_SIZE, BufferedImage.TYPE_INT_ARGB);
         cellImg.getGraphics().drawImage(_cellImg, 0, 0, null);
-        if(curCell.hereTank()){                
-             cellImg.getGraphics().drawImage(getImgTank(curCell.getTank()), 0, 0, null);
+        if(curCell.getUnit() instanceof Tank){                
+             cellImg.getGraphics().drawImage(getImgTank((Tank)curCell.getUnit()), 0, 0, null);
         }
-        if(curCell.hereWall()){
+        if(curCell.getUnit() instanceof Wall){
             cellImg.getGraphics().drawImage(_wallImg, 0, 0, null);
+        }
+        if(curCell.getAmmo()!= null){
+            cellImg.getGraphics().drawImage(getAmmoImage(curCell.getAmmo()), 0, 0, null);
         }
         return cellImg;
         
+    }
+    
+    public BufferedImage getAmmoImage(AbstractAmmo ammo){
+        BufferedImage img = new BufferedImage(CELL_SIZE, CELL_SIZE, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.rotate(ammo.getDirection().direct()*Math.PI/2, 25, 25);
+        g.drawImage(_bulletImg, 0, 0, null);
+        return img;
     }
     
     //Генерация изображения жизней танка
@@ -340,19 +362,52 @@ public class GamePanel extends JFrame implements KeyListener{
         return tankImg;
     }
     
-    //Отрисока снаряда
-    private void paintBullet(Bullet bullet){
-        //Отрисока поля без снаряда
-        repaintField();
+    
+    
+    //Переход в режим выбора ячеек
+    private boolean runChooseCellMode = false;
+    private void startChooseCellMode(TurnableBullet bullet){
+        runChooseCellMode = true;
+        ArrayList<Cell> cells = bullet.getAvailableCells();
         
-        //Отрисока снаряда
-        Coordinate coord = _model.field().getCoordinateCell(bullet.getCell());
-        BufferedImage img = new BufferedImage(CELL_SIZE, CELL_SIZE, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = img.createGraphics();
-        _field[coord.getY()-1][coord.getX()-1].getIcon().paintIcon(this, g, 0, 0);        
-        g.rotate(bullet.getDirection().direct()*Math.PI/2, 25, 25);
-        g.drawImage(_bulletImg, 0, 0, null);
-        _field[coord.getY()-1][coord.getX()-1].setIcon(new ImageIcon(img));
+        for (int row = 0; row < _model.field().height(); row++){
+            for (int col = 0; col < _model.field().width(); col++){       
+                Cell curCell = _model.field().getCell(new Coordinate(col+1, row+1));
+                if(!cells.contains(curCell)){
+                    BufferedImage img = new BufferedImage(CELL_SIZE, CELL_SIZE, BufferedImage.TYPE_INT_ARGB);
+                    Graphics2D g = img.createGraphics();    
+                    _field[row][col].getIcon().paintIcon(this, g, 0, 0);
+                    g.setColor(new Color(0,0,0,120));
+                    g.fillRect(0, 0, CELL_SIZE, CELL_SIZE);
+                    _field[row][col].setIcon(new ImageIcon(img));
+                    _field[row][col].repaint();
+                }
+                else{
+                    _field[row][col].setBorderPainted(true);
+                    _field[row][col].setEnabled(true);
+                    _field[row][col].addActionListener(new CellActionListener(curCell, bullet));
+                }
+            }
+        }
+        validate();
+    }
+    
+    public class CellActionListener implements ActionListener {
+        TurnableBullet _bullet;
+        Cell _cell;
+        
+        public CellActionListener(Cell cell, TurnableBullet bullet) {
+            _bullet = bullet;
+            _cell = cell;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            _bullet.buildMinPath(_cell);    
+            runChooseCellMode = false;
+            _model.getCurrentTank().shoot(_bullet);
+            repaintField();
+            
+        }
     }
       
     //Открыть панель окончания игры
@@ -374,23 +429,35 @@ public class GamePanel extends JFrame implements KeyListener{
         
     }
     
+    private PaintExploseTimer timer;
     //Отрисока взрыва
-    private void PrintExplose(Bullet bullet)    {
-        Cell cell = bullet.getCell();
+    private void paintExplose(Cell cell)    {
         Coordinate coord = _model.field().getCoordinateCell(cell);
         BufferedImage img = new BufferedImage(CELL_SIZE, CELL_SIZE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = img.createGraphics();
         _field[coord.getY()-1][coord.getX()-1].getIcon().paintIcon(this, g, 0, 0);
         g.drawImage(_explosionImg, 0, 0, null);
         _field[coord.getY()-1][coord.getX()-1].setIcon(new ImageIcon(img));
+        validate();
         
-        try { 
-            Thread.sleep(250);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(GamePanel.class.getName()).log(Level.SEVERE, null, ex);
+        timer = new PaintExploseTimer(300, cell, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                _field[coord.getY()-1][coord.getX()-1].setIcon(new ImageIcon(GetCellImage(cell)));
+                timer = null;
+            }
+        });
+        timer.setRepeats(false);
+        timer.start(); 
+        
+    }
+    
+    private class PaintExploseTimer extends Timer{
+        public Cell _cell;
+        public PaintExploseTimer(int delay, Cell cell, ActionListener listener) {
+            super(delay, listener);
+            _cell = cell;
         }
-        
-        _field[coord.getY()-1][coord.getX()-1].setIcon(new ImageIcon(GetCellImage(cell)));
     }
     
     //Конец игры
@@ -431,18 +498,19 @@ public class GamePanel extends JFrame implements KeyListener{
 
         @Override
         public void ExplosiveBullet(BulletEvent e) {
-            PrintExplose(e._bullet);
+            System.out.println("explose bullet");
+            paintExplose(e._cell);
         }
 
         @Override
         public void MoveBullet(BulletEvent e) {
-            paintBullet(e._bullet);
             System.out.println("move bullet");
+            repaintField();
         }
 
         @Override
         public void StartShootBullet(BulletEvent e) {
-            
+            System.out.println("start bullet");
         }
         
     }
@@ -454,25 +522,40 @@ public class GamePanel extends JFrame implements KeyListener{
         
         if(_model.field()!= null && _model.getCurrentTank()!= null)
         {
-            switch (e.getKeyCode()) {
-                case KeyEvent.VK_A:
-                    _model.getCurrentTank().rotate(Rotation.Left());
-                    break;
-                case KeyEvent.VK_D:
-                    _model.getCurrentTank().rotate(Rotation.Right());                  
-                    break;
-                case KeyEvent.VK_W:
-                    _model.getCurrentTank().move();                   
-                    break;
-                case KeyEvent.VK_F:
-                    _model.getCurrentTank().shoot();
-                    break;
-                case KeyEvent.VK_SPACE:
-                    _model.getCurrentTank().skipStep();
-                    break;
-                
-                default:
-                    break;
+            if(!runChooseCellMode){
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_A:
+                        _model.getCurrentTank().rotate(Rotation.Left());
+                        break;
+                    case KeyEvent.VK_D:
+                        _model.getCurrentTank().rotate(Rotation.Right());                  
+                        break;
+                    case KeyEvent.VK_W:
+                        _model.getCurrentTank().move();                   
+                        break;
+                    case KeyEvent.VK_F:
+                    {
+                        if(_model.getCurrentTank().isReadyShoot()){
+                            Bullet ammo = new Bullet(_model.getCurrentTank().getCell(), _model.getCurrentTank().getDirection());
+                            _model.getCurrentTank().shoot(ammo);
+                        }
+                    }
+                        break;
+                    case KeyEvent.VK_Q:
+                    {
+                        if(_model.getCurrentTank().isReadyShoot()){
+                            TurnableBullet ammo = new TurnableBullet(_model.getCurrentTank().getCell(), _model.getCurrentTank().getDirection());
+                            startChooseCellMode(ammo);
+                        }
+                    }
+                        break;
+                    case KeyEvent.VK_SPACE:
+                        _model.getCurrentTank().skipStep();
+                        break;
+
+                    default:
+                        break;
+                }
             }
         }
         

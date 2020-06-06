@@ -7,6 +7,7 @@ package Events;
 
 
 import java.util.EventObject;
+import tanks.AbstractAmmo;
 import tanks.Bullet;
 import tanks.Cell;
 
@@ -15,11 +16,11 @@ import tanks.Cell;
  * @author David
  */
 public class BulletEvent extends EventObject{
-    public Bullet _bullet;
+    public Cell _cell;
     
-    public BulletEvent(Object source, Bullet bullet)
+    public BulletEvent(Object source, Cell cell)
     {
         super(source);
-        _bullet = bullet;
+        _cell = cell;
     }
 }

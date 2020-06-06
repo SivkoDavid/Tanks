@@ -17,7 +17,7 @@ public class Direction {
     
     private int _dir;
     
-    private Direction(int curDir)
+    public Direction(int curDir)
     {
         _dir = curDir;
     }
@@ -47,6 +47,26 @@ public class Direction {
         Direction dir_rot = new Direction((_dir+rot.DirRotate()+NUMDIRECT)%NUMDIRECT); 
         _dir = dir_rot.direct();
         return  dir_rot;
+    }
+    
+    public Direction Reverse()
+    {
+        int newDir = 0;
+        switch(_dir){
+            case 0:{
+                newDir = 2;
+                break;}
+            case 1:{
+                newDir = 3;
+                break;}
+            case 2:{
+                newDir = 0;
+                break;}
+            case 3:{
+                newDir = 1;
+                break;}
+        }    
+        return  new Direction(newDir);
     }
     
     public int direct()

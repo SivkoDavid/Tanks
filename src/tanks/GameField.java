@@ -96,10 +96,8 @@ public class GameField {
         _startPositios[0] = getCell(new Coordinate(1, 1));
         _startPositios[1] = getCell(new Coordinate(width, height));
 
-        _tanks[0] = new Tank(this, _startPositios[0]);
-        _tanks[1] = new Tank(this, _startPositios[1]);
-        _tanks[0].setDirect(Direction.Right());
-        _tanks[1].setDirect(Direction.Left());
+        _tanks[0] = new Tank(_startPositios[0], Direction.Right());
+        _tanks[1] = new Tank(_startPositios[1], Direction.Left());
     }
 
     public void setStartPositions(Coordinate coordStartTank1, Coordinate coordStartTank2) {
@@ -132,12 +130,11 @@ public class GameField {
     }
     
     //Уничтожить поле
-    public void destroy(){
-        field = null;
+    public void destroy(){        
         for(Tank tank:_tanks){
             tank.destroy();
-            tank.destroy();
         }
+        field = null;
         _walls = null;
     }
 }

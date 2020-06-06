@@ -5,67 +5,49 @@
  */
 package tanks;
 
-import Events.BulletEvent;
 import Coordination.Direction;
 import Coordination.Rotation;
 import Events.TankEvent;
 import java.util.ArrayList;
 import Events.TankListener;
-import Events.BulletListener;
+import java.util.ConcurrentModificationException;
 
 /**
  *
  * @author David
  */
-public class Tank {
+public class Tank extends MovableUnit{
 
     private final int COUNT_STAP_FOR_SHOOT = 3;
-
-    private Cell _cell;
-    private Direction _direct;
     private int _stepCount;
-    private int _healPoint;
-    private GameField _field;
 
-    public Tank(GameField field, Cell cell) {
-        _field = field;
-        _cell = cell;
-        _direct = Direction.Up();
-        _healPoint = 3;
+    public Tank(Cell cell, Direction direction) {
+        super(cell, direction);
+        _HP = 3;
         _stepCount = 0;
-        _cell.setObjectInside(this);
-        System.out.println(this+" orig");
     }
-    
+
+    @Override
+    public void rotate(Rotation rotation) {
+        super.rotate(rotation);
+        InformAboutRotate(this);
+    }
+
+    @Override
     public void setCell(Cell cell) {
-        _cell.clean();
-        _cell = cell;
-        _cell.setObjectInside(this);
-    }
-
-    public Cell getCell() {
-        return _cell;
+        super.setCell(cell);
+        InformAboutMove(this);
     }
     
-    public int getHP(){
-        return _healPoint;
-    }
-
-    public void setDirect(Direction direct) {
-        _direct = direct;
-    }
-
-    public Direction getDirection(){
-        return _direct;
-    }
+    
     
     //--------------actions------------
-    public boolean shoot() {
-        if (_stepCount >= COUNT_STAP_FOR_SHOOT) {
-            Bullet bullet = new Bullet(_cell);
-            bullet.moveToObstacle(_direct);
-            _stepCount = 0;
+    public boolean shoot(AbstractAmmo ammo) {
+        if (isReadyShoot()) {
             InformAboutFire(this);
+            ammo.shoot();
+            _stepCount = 0;
+            
             return true;
         }
         
@@ -78,13 +60,11 @@ public class Tank {
     }
 
     //Перемещение
+    @Override
     public boolean move() {
-        Cell newCell = _cell.nextCell(_direct);
         //Если можно переместиться
-        if (newCell != null && newCell.hereEmpty()) {
-            _cell.clean();
-            _cell = newCell;
-            _cell.setObjectInside(this);
+        if (hasMove(_direct) && _cell.nextCell(_direct).getUnit() == null) {
+            super.move();
             _stepCount++;
             InformAboutMove(this);
             return true;
@@ -92,10 +72,6 @@ public class Tank {
         return false;
     }
 
-    public void rotate(Rotation rotate) {
-        _direct.Rotate(rotate);
-        InformAboutRotate(this);
-    }
     
     public void skipStep(){
         InformAboutSkip(this);
@@ -103,12 +79,12 @@ public class Tank {
     }
     
     public void takeLife(){
-        _healPoint --;
+        _HP --;
     }
         
     public void explode(){
-        takeLife();
-        InformAboutExplosion(this);
+        takeLife();        
+        InformAboutExplosion(this);        
     }
     
     //События танка    
@@ -132,9 +108,12 @@ public class Tank {
     private void InformAboutExplosion(Tank tank)
     {
         TankEvent event = new TankEvent(this,tank);
-        for(TankListener i : _listeners){
-            i.ExplosiveTank(event);
+        try{
+            for(TankListener i : _listeners){
+                i.ExplosiveTank(event);
+            }
         }
+        catch(ConcurrentModificationException e){}
     }
     
     private void InformAboutRotate(Tank tank)
@@ -165,12 +144,14 @@ public class Tank {
     {
         TankEvent event = new TankEvent(this,tank);
         for(TankListener i : _listeners){
-            i.SkipStep(event);
+            i.FireTank(event);
         }
     }
     
     
     public void destroy(){
-        RemoveAllListener();
+        _cell.remove(this);
+        _cell = null;
+        _listeners.clear();
     }
 }

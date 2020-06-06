@@ -9,11 +9,11 @@ package tanks;
  *
  * @author David
  */
-public class Wall extends StaticUnit{
-    private Cell _cell;
+public abstract class StaticUnit extends GameUnit{
     
-    public Wall(Cell cell) {
+    public StaticUnit(Cell cell) {
         super(cell);
-        _HP = NOT_DESTROYED_AND_NOT_MISS;
+        _HP = 1;
     }
+    
 }
