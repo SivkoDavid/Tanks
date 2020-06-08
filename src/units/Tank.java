@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tanks;
+package units;
 
 import Coordination.Direction;
 import Coordination.Rotation;
@@ -11,6 +11,7 @@ import Events.TankEvent;
 import java.util.ArrayList;
 import Events.TankListener;
 import java.util.ConcurrentModificationException;
+import tanks.Cell;
 
 /**
  *
@@ -18,13 +19,25 @@ import java.util.ConcurrentModificationException;
  */
 public class Tank extends MovableUnit{
 
-    private final int COUNT_STAP_FOR_SHOOT = 3;
-    private int _stepCount;
+    private final int COUNT_STAP_FOR_SHOOT = 3; //Кол-во ходов после которых есть возможность сделать выстрел
+    private int _stepCount; //Счетчик ходов от последнего выстрела
+    private Fort _fort;
+    
 
-    public Tank(Cell cell, Direction direction) {
+    public Tank(Cell cell, Direction direction, Fort fort) {
         super(cell, direction);
         _HP = 3;
         _stepCount = 0;
+        _fort = fort;
+        _fort.setTank(this);
+    }
+    
+    /**
+     * Вернуть свой форт
+     * @return 
+     */
+    public Fort getFort(){
+        return _fort;
     }
 
     @Override
@@ -42,6 +55,12 @@ public class Tank extends MovableUnit{
     
     
     //--------------actions------------
+    
+    /**
+     * Выстрелить
+     * @param ammo снаряд которым происходит выстрел
+     * @return 
+     */
     public boolean shoot(AbstractAmmo ammo) {
         if (isReadyShoot()) {
             InformAboutFire(this);
@@ -54,16 +73,24 @@ public class Tank extends MovableUnit{
         return false;
     }
    
-    //Готовность стрелять
+    
+    /**
+     * Готовность стрелять
+     * @return 
+     */
     public boolean isReadyShoot(){
         return _stepCount >= COUNT_STAP_FOR_SHOOT;
     }
 
-    //Перемещение
+    
+    /**
+     * Перемещение
+     * @return 
+     */
     @Override
     public boolean move() {
         //Если можно переместиться
-        if (hasMove(_direct) && _cell.nextCell(_direct).getUnit() == null) {
+        if (canMove(_direct) && _cell.nextCell(_direct).getUnit() == null) {
             super.move();
             _stepCount++;
             InformAboutMove(this);
@@ -72,20 +99,33 @@ public class Tank extends MovableUnit{
         return false;
     }
 
-    
+    /**
+     * Пропустить ход
+     */
     public void skipStep(){
         InformAboutSkip(this);
         _stepCount++;
     }
     
-    public void takeLife(){
-        _HP --;
-    }
-        
+    
+    @Override
+    /**
+     * Взрыв танка
+     */
     public void explode(){
-        takeLife();        
+        super.explode();       
         InformAboutExplosion(this);        
     }
+    
+    @Override
+    /**
+     * Уничтожиться
+     */
+    public void destroy(){
+        super.destroy();
+        _listeners.clear();
+    }
+    
     
     //События танка    
     static private ArrayList<TankListener> _listeners = new ArrayList<TankListener>();
@@ -149,9 +189,4 @@ public class Tank extends MovableUnit{
     }
     
     
-    public void destroy(){
-        _cell.remove(this);
-        _cell = null;
-        _listeners.clear();
-    }
 }

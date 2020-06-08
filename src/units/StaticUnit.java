@@ -3,7 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tanks;
+package units;
+
+import tanks.Cell;
 
 /**
  *
@@ -13,6 +15,7 @@ public abstract class StaticUnit extends GameUnit{
     
     public StaticUnit(Cell cell) {
         super(cell);
+        //Стандартно у статических объектов есть одна жизнь
         _HP = 1;
     }
     

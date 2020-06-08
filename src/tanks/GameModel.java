@@ -5,15 +5,19 @@
  */
 package tanks;
 
+import units.Tank;
 import Coordination.Coordinate;
 import Coordination.Direction;
 import Coordination.Rotation;
+import Events.FortEvent;
+import Events.FortListener;
 import Events.ModelEvent;
 import Events.TankEvent;
 import java.util.ArrayList;
 import java.util.List;
 import Events.TankListener;
 import Events.ModelListener;
+import units.Fort;
 
 /**
  *
@@ -24,17 +28,20 @@ public class GameModel {
     private GameField _field;
     private Tank[] _tanks;
     private Tank _currentTank;
-    private ArrayList<Coordinate> _wallsPositions = new ArrayList<Coordinate>();
+    private boolean _gameRunning = false;
+     
 
     //Создание игрового поля
     private void createGameField() {
         _field = new GameField(9, 9, this);
-        _field.generateTanks();
+        _field.generateFortsAndTanks();
         _tanks = _field.getTanks();
         
-        listeningTanks();        
+        listeningTanksAndForts();        
         _currentTank = _tanks[0];
         
+        //Позиции стен
+        ArrayList<Coordinate> _wallsPositions = new ArrayList<Coordinate>();        
         _wallsPositions.add(new Coordinate(8, 1));
         _wallsPositions.add(new Coordinate(3, 4));
         _wallsPositions.add(new Coordinate(3, 5));
@@ -42,8 +49,16 @@ public class GameModel {
         _wallsPositions.add(new Coordinate(4, 6));
         _wallsPositions.add(new Coordinate(5, 6));
         _wallsPositions.add(new Coordinate(5, 7));
-
         _field.generateWalls(_wallsPositions);
+        
+        //Позиции воды
+        ArrayList<Coordinate> _watersPositions = new ArrayList<Coordinate>(); 
+        _watersPositions.add(new Coordinate(6, 6));
+        _watersPositions.add(new Coordinate(7, 6));
+        _watersPositions.add(new Coordinate(8, 6));
+        _watersPositions.add(new Coordinate(8, 5));
+        _watersPositions.add(new Coordinate(9, 5));
+        _field.generateWaters(_watersPositions);
     }
     
     public GameField field(){
@@ -54,9 +69,10 @@ public class GameModel {
     
     //Начало игры
     public void startGame() {
+        //Установить индикатор идущей игры
+        _gameRunning = true;
         InformAboutStartGame("");
         createGameField(); 
-        
     }
     
     public Tank getCurrentTank(){
@@ -101,26 +117,36 @@ public class GameModel {
     
     //Конец игры
     private void theEnd(Tank luseTank){
-        String mess = "Выиграл синий танк";
-        if(luseTank == _tanks[1])
-            mess = "Выиграл красный танк";
+        
+        String mess = "Выиграл красный танк";
+        if(luseTank == _tanks[0])
+            mess = "Выиграл синий танк";
         InformAboutEndGame(mess);
         finishGame();
     }
     
     //Прекращение игры
     public void finishGame(){
-        _field.destroy();
-        _tanks = null;
-        _currentTank = null;
+        _gameRunning = false;
+        if(_tanks != null){
+            _field.destroy();
+            _tanks = null;
+            _currentTank = null;
+        }
+    }
+    
+    public boolean gameIsRunning(){
+        return _gameRunning;
     }
     
     //----------------Observering--------------------
     //---------События танка------------
-    TankListener list = new TankEventsForModel();
+    TankListener listenTanks = new TankEventsForModel();
+    FortListener listenFort = new FortEvents();
     
-    private void listeningTanks(){
-            Tank.AddListener(list);
+    private void listeningTanksAndForts(){
+            Tank.AddListener(listenTanks);
+            Fort.AddListener(listenFort);
     }
     
     public class TankEventsForModel implements TankListener{
@@ -156,6 +182,17 @@ public class GameModel {
             nextCurrentTank();
         }
     }
+    
+    //-------Fort event-------
+    public class FortEvents implements FortListener{
+
+        @Override
+        public void FortExplose(FortEvent e) {
+            theEnd(e._fort.getTank());
+        }
+        
+    }
+    
     
     //-------Event model------
     static private ArrayList<ModelListener> _listenersRebuild = new ArrayList<ModelListener>();

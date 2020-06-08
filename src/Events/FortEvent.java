@@ -4,23 +4,18 @@
  * and open the template in the editor.
  */
 package Events;
-
-
 import java.util.EventObject;
-import units.AbstractAmmo;
-import units.Bullet;
-import tanks.Cell;
-
+import units.Fort;
 /**
  *
  * @author David
  */
-public class BulletEvent extends EventObject{
-    public Cell _cell;
+public class FortEvent extends EventObject{
+    public Fort _fort;
     
-    public BulletEvent(Object source, Cell cell)
-    {
+    public FortEvent(Object source, Fort fort) {
         super(source);
-        _cell = cell;
+        _fort = fort;
     }
+    
 }

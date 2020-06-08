@@ -8,7 +8,7 @@ package Events;
 import java.util.ArrayList;
 import java.util.EventObject;
 import tanks.Cell;
-import tanks.Tank;
+import units.Tank;
 
 /**
  *

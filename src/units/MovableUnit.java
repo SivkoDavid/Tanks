@@ -3,10 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tanks;
+package units;
 
 import Coordination.Direction;
 import Coordination.Rotation;
+import tanks.Cell;
 
 /**
  *
@@ -22,8 +23,9 @@ public abstract class MovableUnit extends GameUnit{
         _HP = 1;
     }
     
-    
-    
+    /**
+    *Установить поворот
+    */
     public void setDirection(Direction direction){
         _direct = direction;
     }
@@ -32,10 +34,16 @@ public abstract class MovableUnit extends GameUnit{
         return new Direction(_direct.direct());
     }
     
+    /**
+    *Повернуть
+    */
     public void rotate(Rotation rotation){
         _direct.Rotate(rotation);
     }
     
+    /**
+    *Движение вперед в соответствии с поворотом
+    */
     public boolean move(){
         Cell newCell = _cell.nextCell(_direct);
         //Если можно переместиться
@@ -48,7 +56,10 @@ public abstract class MovableUnit extends GameUnit{
         return false;
     }
     
-    public boolean hasMove(Direction direct){
+    /**
+    *Возможность движения в двнном направлении
+    */
+    public boolean canMove(Direction direct){
         return _cell.nextCell(_direct) != null;
     }
 }

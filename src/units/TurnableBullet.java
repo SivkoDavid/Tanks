@@ -3,27 +3,29 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tanks;
+package units;
 
 import Coordination.Coordinate;
 import Coordination.Direction;
 import Coordination.Rotation;
-import Coordination.Traectory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import tanks.Cell;
 
 /**
  *
  * @author David
  */
 public class TurnableBullet extends AbstractAmmo{
+    
+    
 
     public TurnableBullet(Cell cell, Direction direction) {
         super(cell, direction);
-        
-        _maxLegth = 6;
+        RADIUS_EXPLOSION = 2;
+        _maxLegth = 4;
         fromCell = cell;
         
     }
@@ -31,9 +33,10 @@ public class TurnableBullet extends AbstractAmmo{
     @Override
     public void runShoot() {
         if(traectory!= null){
+            //Перемещение в соответствии с траекорией
             for(Direction d: traectory){
                 try {
-                    bulletThread.sleep(200);
+                    bulletThread.sleep(100);
                 } catch (InterruptedException ex) {}
                 setDirection(d);
                 move();
@@ -54,6 +57,11 @@ public class TurnableBullet extends AbstractAmmo{
     private int _maxLegth;
     private ArrayList<ArrayList<Direction> > allPath;
     
+    
+    /**
+     * Поиск доступных ячеек для снаряда
+     * @return 
+     */
     public ArrayList<Cell> getAvailableCells(){
         ArrayList<Cell> cells = new ArrayList<Cell>();
         
@@ -63,13 +71,24 @@ public class TurnableBullet extends AbstractAmmo{
         
     }
     
+    /**
+     * Сбор всех доступных для снавряда клеток
+     * @param cells общий список доступных ячеек
+     * @param curCell текущая яейка
+     * @param legth максимальная длина пути
+     * @param index текущий индекс
+     */
     private void buildAvailableCells(ArrayList<Cell> cells,  Cell curCell, int legth, int index){
         index++;
         for(int i = 0; i<4; i++){
             Cell _currCell = curCell.nextCell(new Direction(i));
-            if(_currCell != null && !cells.contains(_currCell) && _currCell!= fromCell){
-                cells.add(_currCell);
-                if(_currCell.getUnit() == null && index<=legth ){
+            //Если есть ячейка 
+            if(_currCell != null && _currCell!= fromCell){
+                //Добавить в список, если ранее не посещалась
+                if(!cells.contains(_currCell))
+                    cells.add(_currCell);
+                if((_currCell.getUnit() == null ||(_currCell.getUnit() != null && _currCell.getUnit().getHP() == NOT_DESTROYED_AND_MISS )) 
+                        && index<=legth ){
                     //Продолжаем рекурсию
                     buildAvailableCells(cells, _currCell, legth, index);
                 }             
@@ -77,16 +96,15 @@ public class TurnableBullet extends AbstractAmmo{
         }
     }
     
-   
-    
-    //----------------------------
-    //----------------------------
-    
-    
+    /**
+     * Посмтоение наикротчайшего пути
+     * @param to ячейка в которую нужно построить путь
+     */
     public void buildMinPath(Cell to){
         Cell[][] _cells = _cell.field().getCells();
-        int[][] matrix = new int[_cells.length][_cells[0].length];
+        int[][] matrix = new int[_cells.length][_cells[0].length];//МАтрица кротчайших расстояний от текущей ячейки
         Coordinate coordTo = null;
+        //Создание пустой матрицы
         for(int i = 0; i < matrix.length; i++){
             for(int j = 0; j < matrix[i].length; j++){
                 matrix[i][j] = -1;
@@ -98,8 +116,9 @@ public class TurnableBullet extends AbstractAmmo{
             }
         }        
         
-        boolean matrixFilled = false;
+        boolean matrixFilled = false;//Индикатор окончания заполнения матрицы
         
+        //Заполнение матрицы кротчайших расстояний
         while(!matrixFilled){
             matrixFilled = true;
             for(int i = 0; i < matrix.length; i++){
@@ -132,10 +151,11 @@ public class TurnableBullet extends AbstractAmmo{
                             
                             if(x>=0 && x < matrix[i].length && y >=0 && y < matrix.length){
                                 int nextNum = thisNum + 1;
-                                
+                                //Пометить позицию следующим значением
                                 if(matrix[y][x] > nextNum || matrix[y][x] == -1){
                                     matrix[y][x] = nextNum;
                                 }
+                                //Если стена, пометить позицию -2
                                 if(_cells[y][x]!=to &&( _cells[y][x].getUnit() instanceof Wall))
                                     matrix[y][x] = -2;
                             }
@@ -147,21 +167,13 @@ public class TurnableBullet extends AbstractAmmo{
             }
         }
         
-        //----------------------------------------------------------
-        String s="";
-        for(int i = 0; i < matrix.length; i++){
-            for(int j = 0; j < matrix[i].length; j++){
-                s += "["+matrix[i][j]+"]";
-            }
-            s+="\n";
-        }
-        System.out.println(s);
-        //----------------------------------------------------------
-        
+       
         int legthPathTo = matrix[coordTo.getY()][coordTo.getX()];
+        //Координаты целевой ячейки
         int x = coordTo.getX();
         int y = coordTo.getY();
         
+        //Запись кротчайшего пути
         for(int currNum = legthPathTo; currNum > 0; currNum--){
             
             for(int k = 0; k < 4; k++){
@@ -190,22 +202,16 @@ public class TurnableBullet extends AbstractAmmo{
                 
                 if(xd>=0 && xd < matrix[y].length && yd >=0 && yd < matrix.length){
                     if(matrix[yd][xd] == currNum-1){
+                        //Так как проход пути идет от обратного, разворачиваем направления и записываем их в начало траектории
                         traectory.add(0, new Direction(k).Reverse());
                         x = xd;
                         y = yd;
                         //Завершаем пробег по направлениям
-                        k = 1000;
+                        k = 4;
                     }
                 }
             }
         }
-        return;
     }
-    
-    
-    //----------------------------
-    //----------------------------
-    
-    
     
 }

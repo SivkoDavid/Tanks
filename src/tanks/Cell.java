@@ -5,6 +5,10 @@
  */
 package tanks;
 
+import units.AbstractAmmo;
+import units.Wall;
+import units.GameUnit;
+import units.Tank;
 import Coordination.Direction;
 import java.util.ArrayList;
 
@@ -72,9 +76,11 @@ public class Cell {
             _unit = null;
     }
     
+    //Обработка взрыва в ячейке
     public void explode(){
-        if(_unit != null && _unit instanceof Tank){
-            ((Tank)_unit).explode();
+        if(_unit != null){
+            //Взорвать ее юнит, если он существует
+            _unit.explode();
         }
     }
 }

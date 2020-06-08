@@ -3,17 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tanks;
+package Events;
+
+import java.util.EventListener;
 
 /**
  *
  * @author David
  */
-public class Wall extends StaticUnit{
-    private Cell _cell;
-    
-    public Wall(Cell cell) {
-        super(cell);
-        _HP = NOT_DESTROYED_AND_NOT_MISS;
-    }
+public interface FortListener extends EventListener{
+    public void FortExplose(FortEvent e);
 }

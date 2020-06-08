@@ -5,12 +5,15 @@
  */
 package tanks;
 
+import units.Water;
+import units.Wall;
+import units.Tank;
 import Coordination.Coordinate;
 import Coordination.Direction;
 import Coordination.Rotation;
 import java.util.ArrayList;
 import java.util.List;
-
+import units.Fort;
 /**
  *
  * @author David
@@ -25,6 +28,7 @@ public class GameField {
         this.width = width;
         this.height = height;
         _model = model;
+        //Создание ячеек
         generateCells();
     }
     
@@ -39,15 +43,20 @@ public class GameField {
     //------------Cells--------------
     private Cell[][] field;
 
+    /**
+    *Сгенерировать матрицу ячеек
+    */
     private void generateCells() {
         field = new Cell[height][width];
 
+        //Заполнение матрицы ячеек
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
                 field[i][j] = new Cell(this);
             }
         }
 
+        //Установка соседей ячеек
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
                 int cnt = 0;
@@ -65,6 +74,10 @@ public class GameField {
         }
     }
 
+    
+    /**
+    *Вернуть ячейку по ее координате на поле
+    */
     public Cell getCell(Coordinate coord) {
         if (coord.getX() > width || coord.getY() > height) {
             return null;
@@ -72,10 +85,18 @@ public class GameField {
         return field[coord.getY()-1][coord.getX()-1];
     }
 
+    
+    /**
+    *Вернуть матрицу ячеек
+    */
     public Cell[][] getCells(){
         return field;
     }
     
+    
+    /**
+    *Вернуть координаты ячейки
+    */
     public Coordinate getCoordinateCell(Cell cell){
         for(int i = 0; i < height; i++){
             for(int j = 0; j < width; j++){
@@ -87,19 +108,32 @@ public class GameField {
         return null;
     }
 
-    //---------------Tanks------------
+    //---------------Tanks & Forts------------
+    private Fort[] _forts = new Fort[2];
     private Tank[] _tanks = new Tank[2];
     private Cell[] _startPositios = new Cell[2];
 
-    public void generateTanks() {
-        //Standart start positions
-        _startPositios[0] = getCell(new Coordinate(1, 1));
-        _startPositios[1] = getCell(new Coordinate(width, height));
+    /**
+    *Генерация баз и их танков
+    */
+    public void generateFortsAndTanks() {
+        //Форты
+        _forts[0] = new Fort(getCell(new Coordinate(1, 1)));
+        _forts[1] = new Fort(getCell(new Coordinate(width, height)));
+        
+        //Стандартные стартовые позиции танков
+        _startPositios[0] = _forts[0].getCell().nextCell(Direction.Right());
+        _startPositios[1] = _forts[1].getCell().nextCell(Direction.Left());
 
-        _tanks[0] = new Tank(_startPositios[0], Direction.Right());
-        _tanks[1] = new Tank(_startPositios[1], Direction.Left());
+        //Танки
+        _tanks[0] = new Tank(_startPositios[0], Direction.Right(), _forts[0]);
+        _tanks[1] = new Tank(_startPositios[1], Direction.Left(), _forts[1]);
     }
 
+    
+    /**
+    *Установка нестандартных стартовых позиций
+    */
     public void setStartPositions(Coordinate coordStartTank1, Coordinate coordStartTank2) {
         _startPositios[0] = getCell(coordStartTank1);
         _startPositios[1] = getCell(coordStartTank2);
@@ -111,6 +145,10 @@ public class GameField {
         return _tanks;
     }
     
+    
+    /**
+    *Премещение танка к его стартовой позиции
+    */
     public void tankToStartPosition(Tank tank) {
         for (int i = 0; i < _tanks.length; i++) {
             if(_tanks[i]==tank){
@@ -129,12 +167,32 @@ public class GameField {
         }
     }
     
-    //Уничтожить поле
-    public void destroy(){        
+    //--------------Waters------------
+    private ArrayList<Water> _waters = new ArrayList<Water>();
+    
+    public void generateWaters(List<Coordinate> coords) {
+
+        for (int i = 0; i < coords.size(); i++) {
+            _waters.add(new Water(getCell(coords.get(i))));
+        }
+    }
+    
+    
+    /**
+    *Уничтожить поле
+    */
+    public void destroy(){
+        //Уничтожить танки
         for(Tank tank:_tanks){
             tank.destroy();
         }
+        //Уничтожить форты
+        for(Fort f:_forts){
+            f.destroy();
+        }
+        
         field = null;
         _walls = null;
+        _tanks = null;
     }
 }
